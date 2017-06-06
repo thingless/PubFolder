@@ -2,11 +2,19 @@
 
 {% block head_extras %}
     <script src="https://cdn.jsdelivr.net/clipboard.js/1.6.1/clipboard.min.js"></script>
+    <style>
+        #file-browser td {
+            vertical-align: middle;
+        }
+        #file-browser .glyphicon {
+            padding-right: 5px;
+        }
+    </style>
 {% end %}
 
 {% block main %}
 <div class="row">
-    <table class="table table-striped">
+    <table id="file-browser" class="table table-striped">
         <thead>
             <tr>
                 <th>File Name</th>
@@ -15,21 +23,27 @@
             </tr>
         </thead>
         <tbody>
+            <tr id="back-btn-row">
+                <td><a href="./.."><span style="transform: scaleX(-1);" class="glyphicon glyphicon-share-alt" aria-hidden="true"></span> Back</a></td>
+                <td></td>
+                <td></td>
+            </tr>
             {% for file in entries %}
             <tr>
                 <td><a href="{{file['our_path']}}">
                     {%if file['.tag'] == "file"%}
-                        <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
-                    {% else %}
                         <span class="glyphicon glyphicon-file" aria-hidden="true"></span>
+                    {% else %}
+                        <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
                     {% end %}
                 {{ file['name'] }}</a></td>
                 <td>{{ file.get('server_modified','-') }}</td>
                 <td>
                     {%if file['.tag'] == "file"%}
-                    <button class="btn" data-clipboard-text="{{file['our_path']}}">
+                    <button class="btn btn-primary btn-sm btn-clip jsonly" data-clipboard-text="{{file['our_path']}}">
                         Copy PubShare link to clipboard
                     </button>
+                    <noscript>{{file['our_path']}}</noscript>
                     {% end %}
                 </td>
             </tr>
@@ -37,4 +51,10 @@
         </tbody>
     </table>
 </div>
+<script>
+    new Clipboard('.btn-clip');
+    if(/list\/?$/.exec(window.location.pathname)){
+        $('#back-btn-row').remove();
+    }
+</script>
 {% end %}
