@@ -134,7 +134,10 @@ class ListFolderHandler(tornado.web.RequestHandler):
         js = json.loads(resp.buffer.read().decode('utf8'))
 
         for entry in js['entries']:
-            entry['our_path'] = urllib.parse.urljoin(BASE_URL, uid) + entry['path_lower']
+            if entry['.tag'] == 'file':
+                entry['our_path'] = urllib.parse.urljoin(BASE_URL, uid) + entry['path_lower']
+            else:
+                entry['our_path'] = urllib.parse.urljoin(BASE_URL, 'list') + entry['path_lower']
 
         self.render('list.html', entries=js['entries'])
 
