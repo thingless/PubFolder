@@ -17,12 +17,15 @@ import socket
 import uuid
 import urllib
 
+import db
+
 logger = logging.getLogger(__name__)
 tornado.ioloop.IOLoop.current().set_blocking_log_threshold(1)
 
 APP_KEY = os.environ.get('DBX_APP_KEY')
 APP_SECRET = os.environ.get('DBX_APP_SECRET')
 BASE_URL = os.environ.get('BASE_URL')
+COOKIE_SECRET = os.environ.get('COOKIE_SECRET')
 
 USER_AGENT = 'PubFolder/1.0 (Python 3.6)'
 
@@ -38,6 +41,16 @@ class ListFolderHandler(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
         pass
+
+class RootHandler(tornado.web.RequestHandler):
+    @gen.coroutine
+    def get(self):
+        uid = self.get_secure_cookie('dbx_uid')
+        if not uid:
+            # Not logged in
+            pass
+        else:
+            self.write("Logged in as: %s" % uid)
 
 class LoginHandler(tornado.web.RequestHandler):
     @gen.coroutine
@@ -68,6 +81,9 @@ class LoginContinueHandler(tornado.web.RequestHandler):
 
         js = json.load(resp.buffer)
 
+        self.set_secure_cookie('dbx_uid', js['uid'])
+        db.store_auth(uid=js['uid'], access_token=js['access_token'], account_id=js['account_id'])
+
         # Example JS:
         # {
         #     access_token: "-c0JMq0qLncAAAAAAABqMedBF0-_QbmwWHToG4jXXctB1qNBSxm0aZYhupbtC3PK",
@@ -80,11 +96,12 @@ class LoginContinueHandler(tornado.web.RequestHandler):
 
 def make_app():
     return tornado.web.Application([
+        (r"/", RootHandler),
         (r"/(\d+)/(.*)", PublicFolderHandler),
         (r"/list", ListFolderHandler),
         (r"/login", LoginHandler),
         (r"/login/continue", LoginContinueHandler),
-    ], template_path="templates", debug=True)
+    ], template_path="templates", cookie_secret=COOKIE_SECRET, debug=True)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
