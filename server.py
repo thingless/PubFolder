@@ -32,13 +32,31 @@ USER_AGENT = 'PubFolder/1.0 (Python 3.6)'
 io_loop = tornado.ioloop.IOLoop.current()
 http_client = tornado.curl_httpclient.CurlAsyncHTTPClient(io_loop, max_clients=16)
 
-class PublicFolderHandler(tornado.web.RequestHandler):
+class OurHandler(tornado.web.RequestHandler):
+    def write_error(self, status_code, **kwargs):
+        self.set_status(status_code)
+
+        if 'message' in kwargs:
+            message = kwargs['message']
+        else:
+            try:
+                message = kwargs['exc_info'][1].log_message
+            except Exception:
+                message = 'Unknown error.'
+
+        self.render('error.html', error_message='Error %s' % status_code, details=message)
+
+    def render(self, template_name, **kwargs):
+        kwargs['logged_in'] = bool(self.get_secure_cookie('dbx_uid'))
+        return super().render(template_name, **kwargs)
+
+class PublicFolderHandler(OurHandler):
     @gen.coroutine
     def get(self, uid, path):
         token = db.get_auth(uid)
         if token is None:
             # TODO: render something saying that the user is not authenticated with us
-            self.write("No user found")
+            self.render('error.html', error_message="404: Page Not Found :(", details="This is not the page you are looking for.")
             return
 
         # Try to list shared links for the user for this path
@@ -103,17 +121,17 @@ class PublicFolderHandler(tornado.web.RequestHandler):
 
         self.redirect(url)
 
-class ListFolderHandler(tornado.web.RequestHandler):
+class ListFolderHandler(OurHandler):
     @gen.coroutine
     def get(self, path):
         token = None
-        uid = self.get_secure_cookie('dbx_uid').decode('utf8')
+        uid = self.get_secure_cookie('dbx_uid')
         if uid:
+            uid = uid.decode('utf8')
             token = db.get_auth(uid)
         if token is None:
-            # TODO: render something saying that the user is not authenticated with us
-            # This is an auth'd handler
-            self.write("No user found")
+            self.clear_cookie('dbx_uid')
+            self.render('error.html', error_message="User not found", details="You are not logged in, or your Dropbox authorization has expired. Please login again to reauthorize your Dropbox.")
             return
 
         path = path.rstrip('/')
@@ -143,28 +161,27 @@ class ListFolderHandler(tornado.web.RequestHandler):
 
         self.render('list.html', entries=js['entries'])
 
-class RootHandler(tornado.web.RequestHandler):
+class RootHandler(OurHandler):
     @gen.coroutine
     def get(self):
-        uid = self.get_secure_cookie('dbx_uid').decode('utf8')
-        if not uid:
-            # Not logged in
-            pass
-        else:
-            self.write("Logged in as: %s" % uid)
+        uid = self.get_secure_cookie('dbx_uid')
+        if uid:
+            uid = uid.decode('utf8')
+        self.render('home.html')
 
-class Error404Handler(tornado.web.RequestHandler):
+class Error404Handler(OurHandler):
     @gen.coroutine
     def get(self, path):
+        self.set_status(404)
         self.render('error.html', error_message="404: Page Not Found :(", details="This is not the page you are looking for.")
 
-class LoginHandler(tornado.web.RequestHandler):
+class LoginHandler(OurHandler):
     @gen.coroutine
     def get(self):
         url = urllib.parse.urljoin(BASE_URL, '/login/continue')
         self.render("login.html",client_id=APP_KEY, redirect_uri=urllib.parse.quote(url))
 
-class LoginContinueHandler(tornado.web.RequestHandler):
+class LoginContinueHandler(OurHandler):
     @gen.coroutine
     def get(self):
         code = self.get_argument('code')
@@ -200,6 +217,12 @@ class LoginContinueHandler(tornado.web.RequestHandler):
 
         self.write(json.dumps(js))
 
+class LogoutHandler(OurHandler):
+    @gen.coroutine
+    def get(self):
+        self.clear_cookie('dbx_uid')
+        self.render('error.html', error_message='Logged out', details='You have been logged out.')
+
 def make_app():
     return tornado.web.Application([
         (r"/", RootHandler),
@@ -207,6 +230,7 @@ def make_app():
         (r"/list(/?.*)", ListFolderHandler),
         (r"/login", LoginHandler),
         (r"/login/continue", LoginContinueHandler),
+        (r"/logout", LogoutHandler),
         (r"/(.*)", Error404Handler),
     ], template_path="templates", cookie_secret=COOKIE_SECRET, debug=True)
 
