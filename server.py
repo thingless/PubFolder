@@ -4,11 +4,9 @@ import tornado.ioloop
 import tornado.web
 from tornado.web import HTTPError
 from tornado import template
-import tornado.locks
 from tornado import gen
 import argparse
 import collections
-import concurrent.futures
 import json
 import logging
 import os
@@ -16,8 +14,7 @@ import re
 import socket
 import uuid
 import urllib
-
-import db
+import redis
 
 logger = logging.getLogger(__name__)
 tornado.ioloop.IOLoop.current().set_blocking_log_threshold(1)
@@ -31,6 +28,16 @@ USER_AGENT = 'PubFolder/1.0 (Python 3.6)'
 
 io_loop = tornado.ioloop.IOLoop.current()
 http_client = tornado.curl_httpclient.CurlAsyncHTTPClient(io_loop, max_clients=16)
+
+# DB operations
+red = redis.StrictRedis(host='localhost', port=6379, db=0)
+def store_auth(uid, access_token):
+    red.set('u:' + uid, access_token.encode('utf-8'))
+def get_auth(uid):
+    tok = red.get('u:' + uid)
+    if tok:
+        tok = tok.decode('utf-8')
+    return tok
 
 class OurHandler(tornado.web.RequestHandler):
     def write_error(self, status_code, **kwargs):
@@ -54,7 +61,7 @@ class OurHandler(tornado.web.RequestHandler):
 class PublicFolderHandler(OurHandler):
     @gen.coroutine
     def get(self, uid, path):
-        token = db.get_auth(uid)
+        token = get_auth(uid)
         if token is None:
             # TODO: render something saying that the user is not authenticated with us
             self.render('error.html', error_message="404: Page Not Found :(", details="This is not the page you are looking for.")
@@ -129,7 +136,7 @@ class ListFolderHandler(OurHandler):
         uid = self.get_secure_cookie('dbx_uid')
         if uid:
             uid = uid.decode('utf8')
-            token = db.get_auth(uid)
+            token = get_auth(uid)
         if token is None:
             self.clear_cookie('dbx_uid')
             self.render('error.html', error_message="User not found", details="You are not logged in, or your Dropbox authorization has expired. Please login again to reauthorize your Dropbox.")
@@ -208,7 +215,7 @@ class LoginContinueHandler(OurHandler):
         js = json.loads(resp.buffer.read().decode('utf8'))
 
         self.set_secure_cookie('dbx_uid', js['uid'])
-        db.store_auth(uid=js['uid'], access_token=js['access_token'])
+        store_auth(uid=js['uid'], access_token=js['access_token'])
 
         # Example JS:
         # {
