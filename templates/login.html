@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block main %}
+<div class="row">
+    <div class="jumbotron">
+        <h1>Login to Dropbox</h1>
+        <p>We need to authorize our app with Dropbox so we can create your PubFolder.</p>
+        <a href="https://www.dropbox.com/oauth2/authorize?client_id={{client_id}}&redirect_uri={{redirect_uri}}&response_type=code" type="button" class="btn btn-lg btn-primary">Continue</a>
+    </div>
+</div>
+{% end %}

@@ -3,6 +3,7 @@ import tornado.curl_httpclient
 import tornado.ioloop
 import tornado.web
 from tornado.web import HTTPError
+from tornado import template
 import tornado.locks
 from tornado import gen
 import argparse
@@ -42,7 +43,7 @@ class LoginHandler(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
         url = urllib.parse.urljoin(BASE_URL, '/login/continue')
-        self.redirect('https://www.dropbox.com/oauth2/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code'.format(client_id=APP_KEY, redirect_uri=urllib.parse.quote(url)))
+        self.render("login.html",client_id=APP_KEY, redirect_uri=urllib.parse.quote(url))
 
 class LoginContinueHandler(tornado.web.RequestHandler):
     @gen.coroutine
@@ -83,7 +84,7 @@ def make_app():
         (r"/list", ListFolderHandler),
         (r"/login", LoginHandler),
         (r"/login/continue", LoginContinueHandler),
-    ], debug=True)
+    ], template_path="templates", debug=True)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
