@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block head_extras %}
+    <script src="https://cdn.jsdelivr.net/clipboard.js/1.6.1/clipboard.min.js"></script>
+{% end %}
+
+{% block main %}
+<div class="row">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>File Name</th>
+                <th>Last Modified</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in entries %}
+            <tr>
+                <td><a href="{{file['our_path']}}">
+                    {%if file['.tag'] == "file"%}
+                        <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
+                    {% else %}
+                        <span class="glyphicon glyphicon-file" aria-hidden="true"></span>
+                    {% end %}
+                {{ file['name'] }}</a></td>
+                <td>{{ file.get('server_modified','-') }}</td>
+                <td>
+                    {%if file['.tag'] == "file"%}
+                    <button class="btn" data-clipboard-text="{{file['our_path']}}">
+                        Copy PubShare link to clipboard
+                    </button>
+                    {% end %}
+                </td>
+            </tr>
+            {% end %}
+        </tbody>
+    </table>
+</div>
+{% end %}

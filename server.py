@@ -136,8 +136,7 @@ class ListFolderHandler(tornado.web.RequestHandler):
         for entry in js['entries']:
             entry['our_path'] = urllib.parse.urljoin(BASE_URL, uid) + entry['path_lower']
 
-        self.set_header('Content-type', 'application/json')
-        self.write(json.dumps(js))
+        self.render('list.html', entries=js['entries'])
 
 class RootHandler(tornado.web.RequestHandler):
     @gen.coroutine
