@@ -153,6 +153,11 @@ class RootHandler(tornado.web.RequestHandler):
         else:
             self.write("Logged in as: %s" % uid)
 
+class Error404Handler(tornado.web.RequestHandler):
+    @gen.coroutine
+    def get(self, path):
+        self.render('error.html', error_message="404: Page Not Found :(", details="This is not the page you are looking for.")
+
 class LoginHandler(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
@@ -202,6 +207,7 @@ def make_app():
         (r"/list(/?.*)", ListFolderHandler),
         (r"/login", LoginHandler),
         (r"/login/continue", LoginContinueHandler),
+        (r"/(.*)", Error404Handler),
     ], template_path="templates", cookie_secret=COOKIE_SECRET, debug=True)
 
 if __name__ == "__main__":
@@ -222,3 +228,4 @@ if __name__ == "__main__":
         tornado.ioloop.IOLoop.current().start()
     finally:
         print("Stopping the server :(")
+Error404Handler
