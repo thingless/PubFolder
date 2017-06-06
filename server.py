@@ -4,7 +4,6 @@ import tornado.web
 from tornado.web import HTTPError
 import tornado.locks
 from tornado import gen
-from gen import Return
 import argparse
 import collections
 import concurrent.futures
@@ -21,6 +20,7 @@ tornado.ioloop.IOLoop.current().set_blocking_log_threshold(1)
 
 APP_KEY = os.environ.get('DBX_APP_KEY')
 APP_SECRET = os.environ.get('DBX_APP_SECRET')
+BASE_URL = os.environ.get('BASE_URL')
 
 class PublicFolderHandler(tornado.web.RequestHandler):
     @gen.coroutine
@@ -35,9 +35,9 @@ class ListFolderHandler(tornado.web.RequestHandler):
 class LoginHandler(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
-        uo = urllib.parse.urlparse(self.request.uri)
-        url = uo.scheme + '://' + uo.netloc + '/login/continue'
-        self.redirect('https://www.dropbox.com/oauth2/authorize?client_id={client_id}&redirect_uri={redirect_uri}'.format(client_id=APP_KEY, redirect_uri=url))
+        print(self.request.uri)
+        url = urllib.parse.urljoin(BASE_URL, '/login/continue')
+        self.redirect('https://www.dropbox.com/oauth2/authorize?client_id={client_id}&redirect_uri={redirect_uri}'.format(client_id=APP_KEY, redirect_uri=urllib.parse.quote(url)))
 
 class LoginContinueHandler(tornado.web.RequestHandler):
     @gen.coroutine
@@ -51,7 +51,7 @@ def make_app():
         (r"/list", ListFolderHandler),
         (r"/login", LoginHandler),
         (r"/login/continue", LoginContinueHandler),
-    ])
+    ], debug=True)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
