@@ -116,6 +116,8 @@ class ListFolderHandler(tornado.web.RequestHandler):
             self.write("No user found")
             return
 
+        path = path.rstrip('/')
+
         url = 'https://api.dropboxapi.com/2/files/list_folder'
         body = json.dumps({
             "path": path,
@@ -137,7 +139,7 @@ class ListFolderHandler(tornado.web.RequestHandler):
             if entry['.tag'] == 'file':
                 entry['our_path'] = urllib.parse.urljoin(BASE_URL, uid) + entry['path_lower']
             else:
-                entry['our_path'] = urllib.parse.urljoin(BASE_URL, 'list') + entry['path_lower']
+                entry['our_path'] = urllib.parse.urljoin(BASE_URL, 'list') + entry['path_lower'] + '/'
 
         self.render('list.html', entries=js['entries'])
 
