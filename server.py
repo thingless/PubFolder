@@ -35,17 +35,114 @@ http_client = tornado.curl_httpclient.CurlAsyncHTTPClient(io_loop, max_clients=1
 class PublicFolderHandler(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self, uid, path):
-        pass
+        token = db.get_auth(uid)
+        if token is None:
+            # TODO: render something saying that the user is not authenticated with us
+            self.write("No user found")
+            return
+
+        # Try to list shared links for the user for this path
+        url = 'https://api.dropboxapi.com/2/sharing/list_shared_links'
+        body = json.dumps({
+            "path": '/' + path,
+        })
+        hreq = tornado.httpclient.HTTPRequest(url, method='POST', user_agent=USER_AGENT, headers={
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json',
+        }, body=body, request_timeout=120)
+
+        try:
+            resp = yield http_client.fetch(hreq)
+        except Exception as e:
+            logger.exception("Exception when requesting %r", url)
+            raise HTTPError(500, 'Unable to obtain link from Dropbox')
+
+        js = json.loads(resp.buffer.read().decode('utf8'))
+
+        # TODO: Filter links without public visibility
+        try:
+            url = js['links'][0]['url']
+            path = js['links'][0]['path_lower'][1:]
+        except IndexError:
+            path = None
+            url = None
+
+        if url is None:
+            # Generate the shared link for that path
+            url = 'https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings'
+
+            body = json.dumps({
+                "path": '/' + path,
+                "settings": {
+                    "requested_visibility": "public",
+                },
+            })
+            hreq = tornado.httpclient.HTTPRequest(url, method='POST', user_agent=USER_AGENT, headers={
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json',
+            }, body=body, request_timeout=120)
+
+            try:
+                resp = yield http_client.fetch(hreq)
+            except Exception as e:
+                logger.exception("Exception when requesting %r", url)
+                raise HTTPError(500, 'Unable to obtain link from Dropbox')
+
+            js = json.loads(resp.buffer.read().decode('utf8'))
+            url = js['url']
+            path = js['path_lower'][1:]
+
+        # Make it a direct link
+        try:
+            sid = re.search(r'^https://www.dropbox.com/s/([^/]*)/', url).group(1)
+        except Exception:
+            # Fall back on using the DL link
+            url = url.replace('?dl=0', '?dl=1')
+        else:
+            url = 'https://dl.dropboxusercontent.com/1/view/{sid}/{path}'.format(sid=sid, path=path)
+
+        self.redirect(url)
 
 class ListFolderHandler(tornado.web.RequestHandler):
     @gen.coroutine
-    def get(self):
-        pass
+    def get(self, path):
+        token = None
+        uid = self.get_secure_cookie('dbx_uid').decode('utf8')
+        if uid:
+            token = db.get_auth(uid)
+        if token is None:
+            # TODO: render something saying that the user is not authenticated with us
+            # This is an auth'd handler
+            self.write("No user found")
+            return
+
+        url = 'https://api.dropboxapi.com/2/files/list_folder'
+        body = json.dumps({
+            "path": path,
+        })
+        hreq = tornado.httpclient.HTTPRequest(url, method='POST', user_agent=USER_AGENT, headers={
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json',
+        }, body=body, request_timeout=120)
+
+        try:
+            resp = yield http_client.fetch(hreq)
+        except Exception as e:
+            logger.exception("Exception when requesting %r", url)
+            raise HTTPError(500, 'Unable to obtain folder list from Dropbox')
+
+        js = json.loads(resp.buffer.read().decode('utf8'))
+
+        for entry in js['entries']:
+            entry['our_path'] = urllib.parse.urljoin(BASE_URL, uid) + entry['path_lower']
+
+        self.set_header('Content-type', 'application/json')
+        self.write(json.dumps(js))
 
 class RootHandler(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
-        uid = self.get_secure_cookie('dbx_uid')
+        uid = self.get_secure_cookie('dbx_uid').decode('utf8')
         if not uid:
             # Not logged in
             pass
@@ -82,7 +179,7 @@ class LoginContinueHandler(tornado.web.RequestHandler):
         js = json.loads(resp.buffer.read().decode('utf8'))
 
         self.set_secure_cookie('dbx_uid', js['uid'])
-        db.store_auth(uid=js['uid'], access_token=js['access_token'], account_id=js['account_id'])
+        db.store_auth(uid=js['uid'], access_token=js['access_token'])
 
         # Example JS:
         # {
@@ -98,7 +195,7 @@ def make_app():
     return tornado.web.Application([
         (r"/", RootHandler),
         (r"/(\d+)/(.*)", PublicFolderHandler),
-        (r"/list", ListFolderHandler),
+        (r"/list(/?.*)", ListFolderHandler),
         (r"/login", LoginHandler),
         (r"/login/continue", LoginContinueHandler),
     ], template_path="templates", cookie_secret=COOKIE_SECRET, debug=True)
