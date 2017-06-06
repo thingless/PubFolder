@@ -164,10 +164,12 @@ class ListFolderHandler(OurHandler):
 class RootHandler(OurHandler):
     @gen.coroutine
     def get(self):
-        uid = self.get_secure_cookie('dbx_uid')
-        if uid:
-            uid = uid.decode('utf8')
         self.render('home.html')
+
+class FAQHandler(OurHandler):
+    @gen.coroutine
+    def get(self):
+        self.render('faq.html')
 
 class Error404Handler(OurHandler):
     @gen.coroutine
@@ -231,6 +233,7 @@ def make_app():
         (r"/login", LoginHandler),
         (r"/login/continue", LoginContinueHandler),
         (r"/logout", LogoutHandler),
+        (r"/faq", FAQHandler),
         (r"/(.*)", Error404Handler),
     ], template_path="templates", cookie_secret=COOKIE_SECRET, debug=True)
 
