@@ -13,7 +13,7 @@
 {% end %}
 
 {% block main %}
-<div class="row">
+<div class="row"><div class="col-md-10">
     <table id="file-browser" class="table table-striped">
         <thead>
             <tr>
@@ -50,11 +50,13 @@
             {% end %}
         </tbody>
     </table>
-</div>
+</div></div>
 <script>
-    new Clipboard('.btn-clip');
-    if(/list\/?$/.exec(window.location.pathname)){
-        $('#back-btn-row').remove();
-    }
+    jQuery(function(){
+        new Clipboard('.btn-clip');
+        if(/list\/?$/.exec(window.location.pathname)){
+            $('#back-btn-row').remove();
+        }
+    })
 </script>
 {% end %}
