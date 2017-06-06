@@ -79,7 +79,7 @@ class LoginContinueHandler(tornado.web.RequestHandler):
             logger.exception("Exception when requesting %r", url)
             raise HTTPError(500, 'Unable to obtain authorization code from Dropbox')
 
-        js = json.load(resp.buffer)
+        js = json.loads(resp.buffer.read().decode('utf8'))
 
         self.set_secure_cookie('dbx_uid', js['uid'])
         db.store_auth(uid=js['uid'], access_token=js['access_token'], account_id=js['account_id'])
