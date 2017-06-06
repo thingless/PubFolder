@@ -47,7 +47,8 @@ class OurHandler(tornado.web.RequestHandler):
         self.render('error.html', error_message='Error %s' % status_code, details=message)
 
     def render(self, template_name, **kwargs):
-        kwargs['logged_in'] = bool(self.get_secure_cookie('dbx_uid'))
+        if 'logged_in' not in kwargs:
+            kwargs['logged_in'] = bool(self.get_secure_cookie('dbx_uid'))
         return super().render(template_name, **kwargs)
 
 class PublicFolderHandler(OurHandler):
@@ -217,13 +218,13 @@ class LoginContinueHandler(OurHandler):
         #     account_id: "dbid:AABkoAh-HU3E5gJ2Ed1XR_Yait3IBadk0Ps"
         # }
 
-        self.write(json.dumps(js))
+        self.redirect('/')
 
 class LogoutHandler(OurHandler):
     @gen.coroutine
     def get(self):
         self.clear_cookie('dbx_uid')
-        self.render('error.html', error_message='Logged out', details='You have been logged out.')
+        self.render('error.html', error_message='Logged out', details='You have been logged out.', logged_in=False)
 
 def make_app():
     return tornado.web.Application([
