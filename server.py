@@ -234,6 +234,8 @@ def make_app():
         (r"/login/continue", LoginContinueHandler),
         (r"/logout", LogoutHandler),
         (r"/faq", FAQHandler),
+        (r'/(favicon.ico)', tornado.web.StaticFileHandler, {'path': 'static'}),
+        (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': 'static'}),
         (r"/(.*)", Error404Handler),
     ], template_path="templates", cookie_secret=COOKIE_SECRET, debug=True)
 
