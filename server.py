@@ -23,6 +23,7 @@ APP_KEY = os.environ.get('DBX_APP_KEY')
 APP_SECRET = os.environ.get('DBX_APP_SECRET')
 BASE_URL = os.environ.get('BASE_URL')
 COOKIE_SECRET = os.environ.get('COOKIE_SECRET')
+DEBUG = os.environ.get('DEBUG') == '1'
 
 USER_AGENT = 'PubFolder/1.0 (Python 3.6)'
 
@@ -245,7 +246,7 @@ def make_app():
         (r'/(favicon.ico)', tornado.web.StaticFileHandler, {'path': 'static'}),
         (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': 'static'}),
         (r"/(.*)", Error404Handler),
-    ], template_path="templates", cookie_secret=COOKIE_SECRET, debug=True)
+    ], template_path="templates", cookie_secret=COOKIE_SECRET, debug=DEBUG)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
