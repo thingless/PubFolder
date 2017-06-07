@@ -23,6 +23,7 @@ APP_KEY = os.environ.get('DBX_APP_KEY')
 APP_SECRET = os.environ.get('DBX_APP_SECRET')
 BASE_URL = os.environ.get('BASE_URL')
 COOKIE_SECRET = os.environ.get('COOKIE_SECRET')
+DEBUG = os.environ.get('DEBUG') == '1'
 
 USER_AGENT = 'PubFolder/1.0 (Python 3.6)'
 
@@ -88,9 +89,9 @@ class PublicFolderHandler(OurHandler):
         # TODO: Filter links without public visibility
         try:
             url = js['links'][0]['url']
-            path = js['links'][0]['path_lower'][1:]
+            lower_path = js['links'][0]['path_lower'][1:]
         except IndexError:
-            path = None
+            lower_path = None
             url = None
 
         if url is None:
@@ -116,7 +117,7 @@ class PublicFolderHandler(OurHandler):
 
             js = json.loads(resp.buffer.read().decode('utf8'))
             url = js['url']
-            path = js['path_lower'][1:]
+            lower_path = js['path_lower'][1:]
 
         # Make it a direct link
         try:
@@ -125,7 +126,7 @@ class PublicFolderHandler(OurHandler):
             # Fall back on using the DL link
             url = url.replace('?dl=0', '?dl=1')
         else:
-            url = 'https://dl.dropboxusercontent.com/1/view/{sid}/{path}'.format(sid=sid, path=path)
+            url = 'https://dl.dropboxusercontent.com/1/view/{sid}/{path}'.format(sid=sid, path=lower_path)
 
         self.redirect(url)
 
@@ -245,7 +246,7 @@ def make_app():
         (r'/(favicon.ico)', tornado.web.StaticFileHandler, {'path': 'static'}),
         (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': 'static'}),
         (r"/(.*)", Error404Handler),
-    ], template_path="templates", cookie_secret=COOKIE_SECRET, debug=True)
+    ], template_path="templates", cookie_secret=COOKIE_SECRET, debug=DEBUG)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

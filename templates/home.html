@@ -5,6 +5,7 @@
     <div class="jumbotron">
       <h1>PubFolder</h1>
       <p>Claim back your Dropbox public folder.</p>
+<<<<<<< HEAD
 
       <ol>
       {% if not logged_in %}
@@ -27,5 +28,18 @@
       2) PubFolder links come in a predictable format. The path to each file is <code>pubfolder.com/&ltyour user id&gt/&ltthe file path within PubFolder&gt</code>
     </div>
 
+=======
+    </div>
+
+
+    <h4>How to Use PubFolder</h4>
+    <ol>
+      {% if not logged_in %}
+      <li><p><a href="/login">Authorize your Dropbox</a></p></li>
+     {% end %}
+     <li><p>Put files you'd like to share in <a href="https://www.dropbox.com/home/Apps/PubFolder" target="_blank">your PubFolder</a></p></li>
+      <li><p>Go to <a href="/list">List Files</a> and click the button to get your PubFolder link for sharing</p>
+    </ol>
+>>>>>>> 6c0a5c41875738bfe48e27ced9d81e70df785099
 </div>
 {% end %}

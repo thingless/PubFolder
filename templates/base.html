@@ -14,23 +14,23 @@
     <title>PubFolder</title>
     <!-- Search Engine -->
     <meta name="description" content="Claim back your Dropbox public folder with PubFolder!">
-    <meta name="image" content="https://pubfolder.com/open-folder.png">
+    <meta name="image" content="https://pubfolder.com/static/open-folder.png">
     <!-- Schema.org for Google -->
     <meta itemprop="name" content="PubFolder">
     <meta itemprop="description" content="Claim back your Dropbox public folder with PubFolder!">
-    <meta itemprop="image" content="https://pubfolder.com/open-folder.png">
+    <meta itemprop="image" content="https://pubfolder.com/static/open-folder.png">
     <!-- Twitter -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="PubFolder">
     <meta name="twitter:description" content="Claim back your Dropbox public folder with PubFolder!">
     <meta name="twitter:site" content="PubFolder">
     <meta name="twitter:creator" content="PubFolder">
-    <meta name="twitter:image:src" content="https://pubfolder.com/open-folder.png">
+    <meta name="twitter:image:src" content="https://pubfolder.com/static/open-folder.png">
     <!--<meta name="twitter:player" content="https://pubfolder.com/makevid.mp4">-->
     <!-- Open Graph general (Facebook, Pinterest & Google+) -->
     <meta name="og:title" content="PubFolder">
     <meta name="og:description" content="Claim back your Dropbox public folder with PubFolder!">
-    <meta name="og:image" content="https://pubfolder.com/open-folder.png">
+    <meta name="og:image" content="https://pubfolder.com/static/open-folder.png">
     <meta name="og:url" content="https://pubfolder.com">
     <meta name="og:site_name" content="PubFolder - Claim back your Dropbox public folder">
     <meta name="og:locale" content="en_US">
@@ -45,6 +45,7 @@
     <!--<link href="../../dist/css/bootstrap-theme.min.css" rel="stylesheet">-->
     <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/united/bootstrap.min.css" rel="stylesheet">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="static/main.css">
     <noscript><style>.jsonly {display: none;}</style></noscript>
     {% block head_extras %}{% end %}
   </head>
@@ -63,7 +64,7 @@
             {% if logged_in %}
               <li><a href="/list">List Files</a></li>
             {% end %}
-            <li><a href="/faq">FAQ</a></li>
+	    <li><a href="/faq">FAQ</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
             {% if logged_in %}
