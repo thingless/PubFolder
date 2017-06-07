@@ -36,7 +36,7 @@
                     {% else %}
                         <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
                     {% end %}
-                {{ escape(file['name']) }}</a></td>
+                {{ file['name'] }}</a></td>
                 <td>{{ file.get('server_modified','-') }}</td>
                 <td>
                     {%if file['.tag'] == "file"%}
